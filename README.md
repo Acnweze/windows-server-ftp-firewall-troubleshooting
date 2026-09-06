@@ -435,14 +435,3 @@ This project demonstrates practical skills relevant to roles such as:
 * Junior Systems Administrator
 
 The focus of this project is not simply configuring a Windows Server. It demonstrates the ability to **investigate a production-style connectivity problem, identify the failing layer, use logs as evidence, implement a targeted remediation, and verify the result.**
-
----
-
-## Author
-
-**Agatha Nweze**
-
-Windows Server | Azure | PowerShell | Infrastructure Support
-
-GitHub: [Acnweze](https://github.com/Acnweze)
-
