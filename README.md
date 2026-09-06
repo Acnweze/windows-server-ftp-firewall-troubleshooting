@@ -2,40 +2,32 @@
 
 ## Overview
 
-This project demonstrates a hands-on Windows Server troubleshooting scenario involving **IIS FTP, Windows Defender Firewall, PowerShell, and TCP connectivity testing**.
+This project demonstrates a hands-on **Windows Server FTP troubleshooting and firewall configuration** scenario using PowerShell, IIS FTP, Windows Defender Firewall, and TCP connectivity testing.
 
-The lab was designed around a real-world Windows Server administration requirement: diagnosing why an FTP server was reachable over the network but unable to accept connections on **TCP port 21**.
+The lab was created around a real-world Windows Server administration requirement and focuses on a practical troubleshooting workflow:
 
-The objective was not simply to configure FTP, but to **identify the cause of the connectivity failure, collect evidence, apply a targeted fix, and validate the result**.
+**Identify the problem → collect evidence → isolate the cause → apply a targeted fix → validate the result.**
 
 ---
 
-## Lab Objective
+## Objective
 
-Troubleshoot and resolve an FTP connectivity issue between a Windows Server client and an IIS FTP server.
+Troubleshoot an FTP connectivity issue between two Windows Servers.
 
-### Initial problem
+The FTP server was running and reachable on the network, but the client could not establish a connection to **TCP port 21**.
 
-The FTP server was:
+The goal was to:
 
-* Running the Microsoft FTP Service
-* Listening on TCP port 21
-* Reachable by IP address
-* Configured with an IIS FTP binding
-
-However, the client could not establish a TCP connection to port 21.
-
-### Expected result
-
-```text
-TcpTestSucceeded : True
-```
-
-and a successful FTP connection displaying:
-
-```text
-220 Microsoft FTP Service
-```
+* Verify the Windows FTP Server feature
+* Verify network configuration
+* Confirm the FTP service and listener
+* Verify the IIS FTP binding
+* Review Windows Firewall rules
+* Enable firewall logging
+* Identify the cause of the connection failure
+* Create a targeted firewall rule
+* Test connectivity again
+* Confirm successful FTP application-level connectivity
 
 ---
 
@@ -44,39 +36,40 @@ and a successful FTP connection displaying:
 | Component                  | Configuration             |
 | -------------------------- | ------------------------- |
 | Client / Domain Controller | TW-DC01                   |
-| Client IP                  | 172.16.0.4                |
+| Client IP Address          | 172.16.0.4                |
 | FTP Server                 | TW-SRV02                  |
-| FTP Server IP              | 172.16.0.8                |
+| FTP Server IP Address      | 172.16.0.8                |
 | Operating System           | Windows Server 2022       |
 | FTP Platform               | IIS FTP                   |
 | Protocol                   | FTP                       |
-| Port                       | TCP 21                    |
+| FTP Port                   | TCP 21                    |
 | Administration             | PowerShell                |
 | Firewall                   | Windows Defender Firewall |
 
 ---
 
-## Technologies & Skills Demonstrated
+## Technologies & Skills
 
 * Windows Server Administration
-* IIS FTP Server
-* Windows Defender Firewall
+* IIS FTP
 * PowerShell
-* TCP/IP troubleshooting
-* Network connectivity testing
-* Firewall rule management
-* Firewall logging
-* Service troubleshooting
-* Port and listener verification
-* Evidence-based troubleshooting
+* Windows Defender Firewall
+* TCP/IP
+* Network Troubleshooting
+* Firewall Rule Management
+* Firewall Logging
+* Port Verification
+* Service Verification
+* Connectivity Testing
+* Evidence-Based Troubleshooting
 
 ---
 
 # Troubleshooting Process
 
-## 1. Verify Windows Server Features
+## 1. Verify Windows Server FTP Feature
 
-The first step was to verify that the required Windows Server and FTP components were installed.
+The first step was to verify that the required Windows Server FTP feature was installed.
 
 ```powershell
 Get-WindowsFeature Web-Ftp-Server
@@ -84,13 +77,13 @@ Get-WindowsFeature Web-Ftp-Server
 
 The FTP Server feature was installed as part of the IIS configuration.
 
-![Windows Features](get%20and%20install-%20windowsFeature%20.png)
+![Windows Server FTP Feature Installation](get%20and%20install-%20windowsFeature%20.png)
 
 ---
 
 ## 2. Verify Network Configuration
 
-The network configuration of the FTP server was checked to confirm its IP address and network interface.
+The FTP server's network configuration was checked to confirm the assigned IP address and network interface.
 
 ```powershell
 Get-NetIPConfiguration
@@ -108,9 +101,9 @@ The FTP server was configured with:
 
 ---
 
-## 3. Test FTP Connectivity
+## 3. Test TCP Port 21
 
-From the client server, connectivity to TCP port 21 was tested.
+Connectivity from the client to the FTP server was tested using PowerShell.
 
 ```powershell
 Test-NetConnection 172.16.0.8 -Port 21
@@ -122,15 +115,15 @@ Test-NetConnection 172.16.0.8 -Port 21
 TcpTestSucceeded : False
 ```
 
-The server was reachable at the network layer, but TCP port 21 was not accepting the connection.
+This confirmed that the client could reach the server but could not establish a TCP connection to port 21.
 
-![Initial Connectivity Test](test-netconnetion%20172.16.png)
+![Initial TCP Connectivity Test](test-netconnetion%20172.16.png)
 
 ---
 
 ## 4. Verify IIS FTP Binding
 
-The IIS FTP binding was checked to confirm that the FTP service was configured to listen on port 21.
+The IIS FTP binding was checked to confirm that FTP was configured for the expected IP address and port.
 
 ```powershell
 Get-WebBinding -Protocol ftp
@@ -142,13 +135,13 @@ The FTP binding showed:
 172.16.0.8:21
 ```
 
-![FTP Binding and Connectivity](get-webbinding%20and%20test-netconnection%20172.16.0.8-%20port%2021.png)
+![IIS FTP Binding and Connectivity Test](get-webbinding%20and%20test-netconnection%20172.16.0.8-%20port%2021.png)
 
 ---
 
-## 5. Verify Windows Firewall Rules
+## 5. Review Windows Firewall Rules
 
-The Windows Defender Firewall rules associated with FTP were reviewed.
+The Windows Defender Firewall rules associated with the FTP Server role were reviewed.
 
 ```powershell
 Get-NetFirewallRule -DisplayGroup "FTP Server"
@@ -158,15 +151,15 @@ The FTP firewall rules were enabled, including the inbound FTP traffic rule.
 
 ![FTP Firewall Rules](get-netfirewallrule%20and%20get-windowsfeature%20web-FTP%20server.png)
 
-At this point, the FTP service, IIS binding, and firewall rules appeared correctly configured.
+At this point, the FTP configuration appeared to be correct.
 
-The next step was to determine **what was actually happening to the network traffic**.
+The next step was to determine whether Windows Firewall was actually dropping the connection.
 
 ---
 
-# 6. Enable Firewall Logging
+# 6. Enable Windows Firewall Logging
 
-Windows Defender Firewall logging was enabled to capture blocked traffic.
+Windows Defender Firewall logging was enabled for the Domain, Private, and Public profiles.
 
 ```powershell
 Set-NetFirewallProfile `
@@ -174,7 +167,7 @@ Set-NetFirewallProfile `
   -LogBlocked True
 ```
 
-The firewall configuration was then verified.
+The firewall profile configuration was then verified.
 
 ```powershell
 Get-NetFirewallProfile
@@ -184,43 +177,34 @@ Get-NetFirewallProfile
 
 ---
 
-# 7. Identify the Root Cause
+# 7. Identify the Firewall Drop
 
-After generating another connection attempt from TW-DC01, the Windows Firewall log was inspected.
+After generating another connection attempt from TW-DC01, the Windows Firewall log was examined.
 
-The log showed traffic from:
-
-```text
-172.16.0.4
-```
-
-to:
+The firewall log showed inbound TCP traffic from:
 
 ```text
-172.16.0.8
+Source:      172.16.0.4
+Destination: 172.16.0.8
+Destination Port: 21
+Action:      DROP
 ```
 
-on:
+This provided the evidence needed to identify the problem.
 
-```text
-TCP 21
-```
+### Root Cause
 
-being dropped.
+**Inbound TCP traffic to port 21 was being dropped by Windows Defender Firewall on the FTP server.**
 
-This was the key piece of evidence.
+This was an important troubleshooting step because the FTP service itself was running and listening.
 
-### Root cause
-
-**Windows Defender Firewall was dropping inbound TCP traffic to port 21 despite the existing FTP rule configuration.**
-
-This changed the troubleshooting direction from investigating the FTP service to investigating firewall enforcement.
+Instead of disabling the firewall or making broad security changes, a targeted firewall rule was used to allow the required traffic.
 
 ---
 
-# 8. Apply a Targeted Firewall Rule
+# 8. Create a Targeted Firewall Rule
 
-Rather than making broad firewall changes, an explicit inbound rule was created for TCP port 21 on the Private profile.
+An explicit inbound firewall rule was created for TCP port 21 on the Private profile.
 
 ```powershell
 New-NetFirewallRule `
@@ -232,13 +216,13 @@ New-NetFirewallRule `
   -Profile Private
 ```
 
-The rule specifically allowed inbound FTP traffic on TCP port 21.
+The rule was designed to allow the required FTP traffic without making unnecessary changes to other firewall protections.
 
 ![TechWave FTP Firewall Rule](techwaveFTP.png)
 
 ---
 
-# 9. Validate the Fix
+# 9. Retest TCP Connectivity
 
 The connection was tested again from **TW-DC01**.
 
@@ -252,13 +236,13 @@ Test-NetConnection 172.16.0.8 -Port 21
 TcpTestSucceeded : True
 ```
 
-![Successful TCP Connectivity](test-netconnetion%20172.16.png)
+The TCP connectivity issue was successfully resolved.
 
-The TCP connectivity problem was resolved.
+![Successful TCP Connectivity Test](get-webbinding%20and%20test-netconnection%20172.16.0.8-%20port%2021.png)
 
 ---
 
-# 10. Confirm FTP Application-Level Connectivity
+# 10. Validate FTP Application Connectivity
 
 A final FTP connection was established from the client.
 
@@ -266,13 +250,13 @@ A final FTP connection was established from the client.
 ftp 172.16.0.8
 ```
 
-The server returned:
+The server responded:
 
 ```text
 220 Microsoft FTP Service
 ```
 
-This confirmed that the issue was resolved beyond the TCP layer and that the FTP service was successfully reachable.
+This confirmed that the issue had been resolved beyond the TCP connectivity layer and that the FTP service was accessible from the client.
 
 ![Successful FTP Connection](techwaveFTP.png)
 
@@ -280,53 +264,55 @@ This confirmed that the issue was resolved beyond the TCP layer and that the FTP
 
 # Before vs. After
 
-| Test                | Before Fix | After Fix                   |
-| ------------------- | ---------- | --------------------------- |
-| Server reachable    | ✓          | ✓                           |
-| FTP Service running | ✓          | ✓                           |
-| TCP 21 listening    | ✓          | ✓                           |
-| IIS FTP binding     | ✓          | ✓                           |
-| TCP 21 connectivity | ✗          | ✓                           |
-| FTP connection      | ✗          | ✓                           |
-| FTP server response | —          | `220 Microsoft FTP Service` |
+| Test                   | Before |                       After |
+| ---------------------- | -----: | --------------------------: |
+| Server reachable       |      ✓ |                           ✓ |
+| FTP feature installed  |      ✓ |                           ✓ |
+| FTP binding configured |      ✓ |                           ✓ |
+| TCP port 21 listening  |      ✓ |                           ✓ |
+| TCP 21 connectivity    |      ✗ |                           ✓ |
+| FTP connection         |      ✗ |                           ✓ |
+| FTP server response    |      — | `220 Microsoft FTP Service` |
 
 ---
 
 # Troubleshooting Methodology
 
-This lab reinforced a structured approach to Windows Server troubleshooting:
+The lab followed a structured troubleshooting process:
 
 ```text
-Connectivity Test
-       ↓
-Service Verification
-       ↓
-Port / Listener Verification
-       ↓
-IIS Binding Verification
-       ↓
+Client Connectivity Test
+          ↓
+Network Configuration Check
+          ↓
+FTP Feature Verification
+          ↓
+IIS FTP Binding Verification
+          ↓
 Firewall Rule Review
-       ↓
+          ↓
 Firewall Logging
-       ↓
+          ↓
 Identify Dropped Traffic
-       ↓
-Apply Targeted Fix
-       ↓
-Retest
-       ↓
-Application-Level Validation
+          ↓
+Targeted Firewall Rule
+          ↓
+Retest TCP Connectivity
+          ↓
+Validate FTP Connection
 ```
 
-The important lesson was to **use evidence instead of assumptions**.
+The key principle was:
 
-Rather than immediately disabling the firewall or making broad configuration changes, firewall logging was used to identify the actual traffic being dropped.
+> **Use evidence to identify the failing layer before making configuration changes.**
+
+Rather than immediately disabling the firewall, firewall logging was used to determine whether the connection was being blocked.
 
 ---
 
 # Key PowerShell Commands
 
-### Check FTP Windows Feature
+### Check FTP Server Feature
 
 ```powershell
 Get-WindowsFeature Web-Ftp-Server
@@ -377,7 +363,7 @@ New-NetFirewallRule `
   -Profile Private
 ```
 
-### Test FTP Connection
+### Test FTP Application Connectivity
 
 ```powershell
 ftp 172.16.0.8
@@ -385,53 +371,58 @@ ftp 172.16.0.8
 
 ---
 
-# Evidence
+# Evidence Collected
 
-The screenshots included in this repository document the troubleshooting process from configuration and testing through diagnosis and successful resolution.
+The repository contains screenshots documenting the troubleshooting process:
 
-* Windows Server FTP feature installation
-* Network configuration
-* Initial TCP connectivity failure
-* IIS FTP binding
-* FTP firewall rules
-* Firewall profile and logging configuration
-* Firewall troubleshooting evidence
-* Targeted FTP firewall rule
-* Successful TCP connectivity
-* Successful FTP connection
+1. Windows Server FTP feature installation
+2. Network configuration
+3. Initial failed TCP connectivity test
+4. IIS FTP binding
+5. Existing FTP firewall rules
+6. Firewall profile and logging configuration
+7. Firewall troubleshooting and rule configuration
+8. Successful TCP connectivity
+9. Successful FTP connection
 
 ---
 
-# Outcome
+# Final Result
 
 The FTP connectivity issue was successfully diagnosed and resolved.
 
-### Final validation
+### Before
+
+```text
+TcpTestSucceeded : False
+```
+
+### After
 
 ```text
 TcpTestSucceeded : True
 ```
 
-and:
+### Application-Level Validation
 
 ```text
 220 Microsoft FTP Service
 ```
 
-The lab demonstrates practical experience with **Windows Server networking, IIS FTP, Windows Defender Firewall, PowerShell, and systematic troubleshooting**.
+The completed lab demonstrates practical experience with **Windows Server, IIS FTP, PowerShell, Windows Defender Firewall, TCP/IP troubleshooting, firewall logging, and systematic incident resolution**.
 
 ---
 
-# Career Relevance
+## Career Relevance
 
-This project demonstrates practical skills relevant to roles such as:
+This project demonstrates practical skills relevant to:
 
 * Windows Administrator
 * Windows Server Administrator
 * Azure Administrator
 * Azure Cloud Support Engineer
 * Infrastructure Support Engineer
-* IT Infrastructure Engineer
 * Junior Systems Administrator
+* IT Infrastructure Engineer
 
-The focus of this project is not simply configuring a Windows Server. It demonstrates the ability to **investigate a production-style connectivity problem, identify the failing layer, use logs as evidence, implement a targeted remediation, and verify the result.**
+The focus is on **hands-on troubleshooting rather than theoretical configuration** — identifying the problem, gathering evidence, applying a controlled fix, and validating the outcome.
